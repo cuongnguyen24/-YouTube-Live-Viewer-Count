@@ -2,10 +2,13 @@
   const PLAYER_BADGE_ID = "ytlvc-live-viewer-player-badge";
   const CACHE_KEY = "ytlvc-last-viewer-text";
   const SCAN_INTERVAL_MS = 1500;
-  const REMOTE_REFRESH_INTERVAL_MS = 60000;
-  const REMOTE_CACHE_TTL_MS = 70000;
   const IS_TOP_FRAME = window.top === window.self;
   const VIEWER_NUMBER = "(?:\\d{1,3}(?:[.,]\\d{3})+|\\d{1,7})(?:\\s*[KM])?";
+  const DEFAULT_OPTIONS = {
+    refreshIntervalSeconds: 60,
+    displayFormat: "full",
+    showRefreshButton: true
+  };
 
   const viewerPatterns = [
     new RegExp(`(^|[^\\d.,])(${VIEWER_NUMBER})\\s+(watching now|watching)\\b`, "i"),
@@ -20,6 +23,8 @@
   let remoteRefreshInFlight = false;
   let lastRemoteViewerText = "";
   let embeddedDataCache = [];
+  let isTemporarilyHidden = false;
+  let options = { ...DEFAULT_OPTIONS };
 
   function removeOldUi() {
     document.getElementById("ytlvc-live-viewer-badge")?.remove();
@@ -204,7 +209,7 @@
     if (!IS_TOP_FRAME || remoteRefreshInFlight) return "";
 
     const now = Date.now();
-    if (!force && now - lastRemoteRefreshAt < REMOTE_REFRESH_INTERVAL_MS) {
+    if (!force && now - lastRemoteRefreshAt < getRemoteRefreshIntervalMs()) {
       return lastRemoteViewerText;
     }
 
@@ -399,11 +404,38 @@
     const pageText = getBySelectors() || getFromVisiblePageText();
     if (pageText) return pageText;
 
-    if (lastRemoteViewerText && Date.now() - lastRemoteRefreshAt < REMOTE_CACHE_TTL_MS) {
+    if (lastRemoteViewerText && Date.now() - lastRemoteRefreshAt < getRemoteCacheTtlMs()) {
       return lastRemoteViewerText;
     }
 
     return getFromInitialData();
+  }
+
+  function getRemoteRefreshIntervalMs() {
+    const seconds = Number(options.refreshIntervalSeconds);
+    const boundedSeconds = Number.isFinite(seconds) ? Math.min(Math.max(seconds, 10), 3600) : 60;
+    return boundedSeconds * 1000;
+  }
+
+  function getRemoteCacheTtlMs() {
+    return getRemoteRefreshIntervalMs() + 10000;
+  }
+
+  function getViewerNumber(text) {
+    return normalizeText(text).match(/^[\d.,]+(?:\s*[KM])?/i)?.[0] || "";
+  }
+
+  function formatViewerText(text) {
+    const normalized = normalizeText(text);
+    if (!normalized) return "Đang tìm số người xem...";
+
+    const number = getViewerNumber(normalized);
+    if (!number) return normalized;
+
+    if (options.displayFormat === "number") return number;
+    if (options.displayFormat === "numberPeople") return `${number} người`;
+
+    return normalized;
   }
 
   function isExtensionNode(node) {
@@ -451,6 +483,18 @@
       });
       badge.append(refresh);
 
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "ytlvc-close-button";
+      close.title = "Ẩn tạm thời";
+      close.textContent = "×";
+      close.addEventListener("click", (event) => {
+        event.stopPropagation();
+        isTemporarilyHidden = true;
+        badge.remove();
+      });
+      badge.append(close);
+
       player.append(badge);
     } else if (badge.parentElement !== player) {
       player.append(badge);
@@ -460,15 +504,53 @@
   }
 
   function updateUI(text) {
-    if (IS_TOP_FRAME) {
+    if (IS_TOP_FRAME && !isTemporarilyHidden) {
       const playerBadge = ensurePlayerBadge();
       if (playerBadge) {
+        playerBadge.classList.toggle("ytlvc-hide-refresh", !options.showRefreshButton);
+
         const playerBadgeText = playerBadge.querySelector(".ytlvc-player-badge-text");
         if (playerBadgeText) {
-          playerBadgeText.textContent = text || "Đang tìm số người xem...";
+          playerBadgeText.textContent = formatViewerText(text);
         }
       }
     }
+  }
+
+  function loadOptions() {
+    if (!globalThis.chrome?.storage?.sync) return;
+
+    chrome.storage.sync.get(DEFAULT_OPTIONS, (storedOptions) => {
+      options = normalizeOptions(storedOptions);
+      updateUI(lastViewerText);
+    });
+
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== "sync") return;
+
+      options = normalizeOptions({
+        ...options,
+        ...Object.fromEntries(
+          Object.entries(changes).map(([key, change]) => [key, change.newValue])
+        )
+      });
+      updateUI(lastViewerText);
+    });
+  }
+
+  function normalizeOptions(value) {
+    const refreshIntervalSeconds = Number(value.refreshIntervalSeconds);
+    const displayFormat = ["full", "number", "numberPeople"].includes(value.displayFormat)
+      ? value.displayFormat
+      : DEFAULT_OPTIONS.displayFormat;
+
+    return {
+      refreshIntervalSeconds: Number.isFinite(refreshIntervalSeconds)
+        ? Math.min(Math.max(refreshIntervalSeconds, 10), 3600)
+        : DEFAULT_OPTIONS.refreshIntervalSeconds,
+      displayFormat,
+      showRefreshButton: value.showRefreshButton !== false
+    };
   }
 
   function tick() {
@@ -501,6 +583,7 @@
     }, 500);
   }
 
+  loadOptions();
   tick();
   setInterval(tick, SCAN_INTERVAL_MS);
 

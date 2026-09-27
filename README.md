@@ -14,6 +14,14 @@ Khi vào trang live, extension chỉ hiển thị một badge ở góc trên bê
 
 Badge có nút `↻` để ép cập nhật ngay. Ngoài ra extension cũng tự fetch lại trang live khoảng 1 phút một lần để lấy số người xem mới, nhưng chỉ cập nhật nếu tìm được dữ liệu thuộc video chính.
 
+Badge có nút `×` để ẩn tạm thời trong tab hiện tại. Khi nhấn `F5`, badge sẽ hiện lại.
+
+Khi bấm icon extension trên thanh trình duyệt, bạn có thể cấu hình:
+
+- thời gian tự cập nhật dữ liệu;
+- kiểu hiển thị: `1.602 người đang xem`, `1.602`, hoặc `1.602 người`;
+- bật/tắt nút cập nhật nhanh `↻` trên badge.
+
 ## Ghi chú
 
 YouTube thay đổi giao diện và tên trường dữ liệu khá thường xuyên, nên extension dùng nhiều cách dò cùng lúc:

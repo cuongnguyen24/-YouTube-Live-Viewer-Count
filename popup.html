@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>YouTube Live Viewer Count</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header>
+        <h1>YouTube Live Viewer Count</h1>
+        <p>Hiển thị số người xem live trong khung video.</p>
+      </header>
+
+      <label class="field">
+        <span>Thời gian tự cập nhật</span>
+        <div class="input-row">
+          <input id="refreshIntervalSeconds" type="number" min="10" max="3600" step="5">
+          <span>giây</span>
+        </div>
+      </label>
+
+      <label class="field">
+        <span>Kiểu hiển thị</span>
+        <select id="displayFormat">
+          <option value="full">1.602 người đang xem</option>
+          <option value="number">1.602</option>
+          <option value="numberPeople">1.602 người</option>
+        </select>
+      </label>
+
+      <label class="toggle">
+        <input id="showRefreshButton" type="checkbox">
+        <span>Hiện nút cập nhật nhanh</span>
+      </label>
+
+      <p id="status" class="status" role="status"></p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

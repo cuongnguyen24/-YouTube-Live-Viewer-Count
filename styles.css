@@ -43,6 +43,14 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
+.ytlvc-player-badge.ytlvc-hide-refresh .ytlvc-refresh-button {
+  display: none;
+}
+
+.ytlvc-player-badge .ytlvc-close-button {
+  font-size: 16px;
+}
+
 .ytlvc-player-badge .ytlvc-refresh-button.is-refreshing {
   animation: ytlvc-spin 0.8s linear infinite;
 }
