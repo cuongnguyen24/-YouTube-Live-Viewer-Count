@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Live Viewer Count",
+  "description": "Shows the live viewer count near the YouTube live chat and video controls.",
+  "version": "1.0.0",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/watch*",
+        "https://www.youtube.com/live/*",
+        "https://www.youtube.com/live_chat*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ]
+}
